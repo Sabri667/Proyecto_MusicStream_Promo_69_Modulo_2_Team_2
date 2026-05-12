@@ -11,7 +11,20 @@
 
 **Este proyecto resuelve eso.**
 
----
+
+## 🎯 Alcance del proyecto
+
+El presente proyecto se centra en el análisis de datos de streaming musical, limitando deliberadamente el conjunto de datos a un subconjunto representativo y manejable para responder a las preguntas de negocio planteadas por el cliente.
+
+### Criterios de inclusión de artistas
+
+- Se seleccionan exclusivamente **10 artistas por país** de entre los más populares (según métricas de streaming o rankings locales) en cada una de las siguientes tres regiones:
+  - **España**
+  - **Argentina**
+  - **Estados Unidos**
+
+Por lo tanto, el análisis cubre un total de **30 artistas** (10 españoles + 10 argentinos + 10 estadounidenses).
+
 
 ## 🎯 ¿Qué hace este proyecto?
 
@@ -130,27 +143,26 @@ ORDER BY country, total_canciones DESC;
 
 1. Clona el repositorio
 ```bash
-git clone https://github.com/tu-equipo/da-project-promo-XX-modulo-2-team-XX
+git clone https://github.com/Sabri667/Proyecto_MusicStream_Promo_69_Modulo_2_Team_2
 ```
 
-2. Instala las dependencias
-```bash
-pip install -r requirements.txt
-```
-
-3. Configura tus claves de API en un archivo `.env`
+2. Configura tus claves de API para ingresar en los documento de extracción
 ```
 LASTFM_API_KEY=tu_clave_aqui
 ```
 
-4. Ejecuta los notebooks de extracción en orden:
-   - `01_extraccion_deezer.ipynb`
-   - `02_extraccion_lastfm.ipynb`
+3. Ejecuta los notebooks de extracción en orden:
+   - `Extracción_DeezerAPI.ipynb`
+   - `Extracción_LastfmAPI.ipynb`
 
-5. Crea la base de datos y ejecuta los scripts SQL:
+4. Ejecuta el script BBDD_music_stream con tu clave de SQL:
+
+   - `BBDD_music_stream.ipynb`  
+
+4. Crea la base de datos y ejecuta los scripts SQL:
 ```bash
-MS_limpieza_tablas.sql   # Crea y normaliza las tablas
-MS_consultas_finales.sql # Consultas de análisis
+    - `MS_1_Limpieza_tablas.sql`   # Crea y normaliza las tablas
+    - `MS_2_Consultas.sql` # Consultas de análisis
 ```
 
 ---
@@ -171,12 +183,13 @@ MS_consultas_finales.sql # Consultas de análisis
 
 ## 📁 Estructura del proyecto
 
-```
-da-project-promo-XX-modulo-2-team-XX/
+```  
+Proyecto_MusicStream_Promo_69_Modulo_2_Team_2/
 │
 ├── notebooks/
-│   ├── 01_extraccion_deezer.ipynb
-│   └── 02_extraccion_lastfm.ipynb
+│   ├── Extracción_DeezerAPI.ipynb
+│   └── Extracción_LastfmAPI.ipynb
+│   └── BBDD_music_stream.ipynb
 │
 ├── data/
 │   ├── songs.csv
@@ -185,10 +198,9 @@ da-project-promo-XX-modulo-2-team-XX/
 │   └── artistas_similares.csv
 │
 ├── sql/
-│   ├── MS_limpieza_tablas.sql
-│   └── MS_consultas_finales.sql
+│   ├── MS_1_Limpieza_tablas.sql
+│   └── MS_2_Consultas.sql
 │
-├── requirements.txt
 └── README.md
 ```
 
@@ -198,8 +210,11 @@ da-project-promo-XX-modulo-2-team-XX/
 
 Este proyecto fue desarrollado como ejercicio completo de ingeniería y análisis de datos en la industria musical, integrando APIs reales, modelado relacional y consultas orientadas a decisiones de negocio.
 
-Desarrollado por el equipo XX · Promoción XX · Adalab Data Analytics
+Desarrollado por el equipo 2· Promoción 69 · Adalab Data Analytics
 
 ---
 
-*¿Preguntas o sugerencias? Abre un issue o contacta por LinkedIn.*
+## 🛠️ Nota sobre la implementación
+
+El código desarrollado opera sobre una **lista de diccionarios** en Python. Esto permite que, en el futuro, la fuente de datos pueda ser reemplazada fácilmente por otro origen (por ejemplo, consultas SQL a una base de datos, un archivo JSON, o una API) sin modificar la lógica principal del análisis.
+
