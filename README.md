@@ -1,4 +1,5 @@
 # 🎵 MusicStream Analytics — Proyecto de Integración de Datos
+
 > *"De datos dispersos a decisiones estratégicas: construyendo puentes entre la información y el negocio."*
 
 ---
