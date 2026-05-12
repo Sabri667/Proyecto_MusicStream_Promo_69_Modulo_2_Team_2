@@ -2,7 +2,7 @@
 -- LIMPIEZA, NORMALIZACIÓN Y CLAVES FORÁNEAS - bbdd_music_stream
 -- ============================================================
 
-USE bbdd_PRUEBA;
+USE bbdd_music_stream;
 
 -- ============================================================
 -- 1. TABLA: artists (antes: artistas)
@@ -25,11 +25,6 @@ ALTER TABLE artists
 -- Verificación
 SELECT * FROM artists;
 DESCRIBE artists;
-
-
--- ============================================================
--- 2. TABLA: deezer_songs
--- ============================================================
 
 -- ============================================================
 -- 2. TABLA: deezer_songs
