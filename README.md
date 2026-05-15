@@ -26,7 +26,7 @@ El presente proyecto se centra en el análisis de datos de streaming musical, li
 Por lo tanto, el análisis cubre un total de **30 artistas** (10 españoles + 10 argentinos + 10 estadounidenses).
 
 
-## 🎯 ¿Qué hace este proyecto?
+## ✅ ¿Qué hace este proyecto?
 
 Integra datos de múltiples fuentes (Deezer, Last.fm, rankings por país) en una base de datos relacional limpia y normalizada, capaz de responder preguntas de negocio que antes requerían trabajo manual.
 
@@ -92,6 +92,10 @@ lastfm_country_rankings  (country_ranking_id PK, artist_id FK, country, ranking_
 2. ¿Cuál es el artista con más variedad de géneros?
 3. ¿Qué géneros dominan en el Top 50 de cada país? (limitado a nuestros 30 artistas)
 
+### 🚀 Estrategia de expansión
+1. ¿Qué artistas tienen alta fidelidad y un gran ranking en un país, pero bajo ranking en otro? → **oportunidad de reposición**.
+2. ¿Qué pares de artistas comparten base de fans y pueden colaborar para expandirse mutuamente en sus mercados fuertes? → **recomendación de colaboraciones estratégicas**.
+
 ---
 
 ## 🔍 Consultas SQL destacadas
@@ -137,6 +141,35 @@ WHERE rnk <= 3
 ORDER BY country, total_canciones DESC;
 ```
 
+### Identificar artistas con potencial de expansión a otro país
+```sql
+SELECT 
+    m.artist_name AS `Artist`,
+    ROUND(m.popularity_ratio, 1) AS `Loyalty_ratio`,
+    r_mal.country AS `Opportunity_country`,
+    r_mal.ranking_position AS `Current_ranking`,
+    (SELECT country 
+     FROM lastfm_country_rankings r2 
+     WHERE r2.artist_id = m.artist_id 
+     ORDER BY ranking_position ASC LIMIT 1) AS `Best_country`,
+    (SELECT MIN(ranking_position) 
+     FROM lastfm_country_rankings r2 
+     WHERE r2.artist_id = m.artist_id) AS `Best_ranking`
+FROM lastfm_metrics m
+JOIN lastfm_country_rankings r_mal ON m.artist_id = r_mal.artist_id
+WHERE m.popularity_ratio > 20
+  AND r_mal.ranking_position > 25
+  AND (SELECT MIN(ranking_position) 
+       FROM lastfm_country_rankings r2 
+       WHERE r2.artist_id = m.artist_id) <= 10
+  AND r_mal.country != (SELECT country 
+                        FROM lastfm_country_rankings r2 
+                        WHERE r2.artist_id = m.artist_id 
+                        ORDER BY ranking_position ASC LIMIT 1)
+ORDER BY (r_mal.ranking_position - (SELECT MIN(ranking_position) 
+                                    FROM lastfm_country_rankings r2 
+                                    WHERE r2.artist_id = m.artist_id)) DESC;
+```
 ---
 
 ## 🚀 Cómo usar este proyecto

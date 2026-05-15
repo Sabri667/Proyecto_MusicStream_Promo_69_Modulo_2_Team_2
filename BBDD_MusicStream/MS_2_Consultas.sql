@@ -1,15 +1,15 @@
 
--- ============================================================
--- CONSULTAS DE ANÁLISIS FINAL - bbdd_music_stream
--- ============================================================
+-- ===============================================================
+-- CONSULTAS DE ANÁLISIS - bbdd_music_stream
+-- ===============================================================
 
 USE bbdd_music_stream;
 
--- ============================================================
--- LISTADO TOP 50 POR PAÍS
--- ============================================================
+-- ===============================================================
+-- 1. LISTADO TOP 50 POR PAÍS
+-- ===============================================================
 
--- 1. Artistas que aparecen en el Top 50 de los 3 países
+-- 1. Artistas que aparecen en el Top 50 de los 3 países.
 
 SELECT 
     artist_name,
@@ -22,7 +22,7 @@ HAVING COUNT(DISTINCT country) = 3
 ORDER BY avg_ranking ASC;
 
 
--- 2. Artistas que aparecen en el Top 50 de un solo país
+-- 2. Artistas que aparecen en el Top 50 de un solo país.
 
 SELECT 
     artist_name,
@@ -40,7 +40,7 @@ HAVING artist_name NOT IN (
 ORDER BY country, ranking_position ASC;
 
 
--- 3. País que concentra más oyentes en su Top 50
+-- 3. País que concentra más oyentes en su Top 50.
 
 SELECT 
     country,
@@ -51,11 +51,11 @@ GROUP BY country
 ORDER BY total_listeners DESC;
 
 
--- ============================================================
--- POPULARIDAD
--- ============================================================
+-- ===============================================================
+-- 2. POPULARIDAD
+-- ===============================================================
 
--- 1. Top 3 artistas por total de reproducciones (playcount)
+-- 1. Top 3 artistas por total de reproducciones (playcount).
 
 SELECT 
     artist_name,
@@ -65,7 +65,7 @@ ORDER BY playcount DESC
 LIMIT 3;
 
 
--- 2. Top 3 artistas con más oyentes
+-- 2. Top 3 artistas con más oyentes.
 
 SELECT 
     artist_name,
@@ -75,18 +75,18 @@ ORDER BY listeners DESC
 LIMIT 3;
 
 
--- 3. Fans más fieles: popularity_ratio más alto
+-- 3. Fans más fieles: popularity_ratio más alto. 
+
 SELECT 
     artist_name,
     listeners,
     playcount,
     ROUND(popularity_ratio, 1) AS popularity_ratio
 FROM lastfm_metrics
-ORDER BY popularity_ratio DESC
-LIMIT 5;
+ORDER BY popularity_ratio DESC;
 
 
--- 4. Oyentes más casuales: popularity_ratio más bajo
+-- 4. Oyentes más casuales: popularity_ratio más bajo.
 
 SELECT 
     artist_name,
@@ -97,10 +97,9 @@ FROM lastfm_metrics
 ORDER BY popularity_ratio ASC
 LIMIT 5;
 
-
--- ============================================================
--- ARTISTAS SIMILARES
--- ============================================================
+-- ===============================================================
+-- 3. ARTISTAS SIMILARES
+-- ===============================================================
 
 -- 1. Artistas similares a uno en concreto
 -- (cambia 'Taylor Swift' por el artista que queráis)
@@ -147,11 +146,12 @@ ORDER BY similares_en_comun DESC
 LIMIT 30;
 
 
--- ============================================================
--- GÉNEROS
--- ============================================================
+-- ===============================================================
+-- 4. GÉNEROS
+-- ===============================================================
 
 -- 1. Género dominante en nuestra selección de artistas
+
 SELECT 
     genre,
     COUNT(*) AS total_canciones,
@@ -173,7 +173,7 @@ GROUP BY artist_name
 ORDER BY total_generos DESC;
 
 
--- 3. Género dominante por país (limitado a nuestros 30 artistas)
+-- 3. Género dominante por país (limitado a nuestros 30 artistas).
 
 SELECT country, genre, total_canciones, avg_ranking
 FROM (
@@ -191,3 +191,98 @@ FROM (
 ) ranked
 WHERE rnk <= 3
 ORDER BY country, total_canciones DESC;
+
+-- ===============================================================
+-- 4. IDENTIFICAR ARTISTAS CON POTENCIAL DE EXPANSIÓN A OTRO PAÍS
+-- ===============================================================
+
+-- 1. País con mejor ranking y país con ranking a potenciar.
+SELECT 
+    m.artist_name AS `Artist`,
+    ROUND(m.popularity_ratio, 1) AS `Loyalty_ratio`,
+    r_mal.country AS `Opportunity_country`,
+    r_mal.ranking_position AS `Current_ranking`,
+    (SELECT country 
+     FROM lastfm_country_rankings r2 
+     WHERE r2.artist_id = m.artist_id 
+     ORDER BY ranking_position ASC LIMIT 1) AS `Best_country`,
+	(SELECT MIN(ranking_position) 
+     FROM lastfm_country_rankings r2 
+     WHERE r2.artist_id = m.artist_id) AS `Best_ranking`
+
+FROM lastfm_metrics m
+JOIN lastfm_country_rankings r_mal ON m.artist_id = r_mal.artist_id
+WHERE m.popularity_ratio > 20
+  AND r_mal.ranking_position > 25
+  AND (SELECT MIN(ranking_position) 
+       FROM lastfm_country_rankings r2 
+       WHERE r2.artist_id = m.artist_id) <= 10
+  AND r_mal.country != (SELECT country 
+                        FROM lastfm_country_rankings r2 
+                        WHERE r2.artist_id = m.artist_id 
+                        ORDER BY ranking_position ASC LIMIT 1)
+ORDER BY (r_mal.ranking_position - (SELECT MIN(ranking_position) 
+                                    FROM lastfm_country_rankings r2 
+                                    WHERE r2.artist_id = m.artist_id)) DESC;
+                                    
+-- ===============================================================
+-- 5. IDENTIFICAR COLABORACIONES
+-- ===============================================================
+
+-- 1. Artistas similares, paises a potenciar y ratio de fidelidad combinado.
+SELECT 
+    a1.artist_name AS `Artist_A`,
+    a2.artist_name AS `Artist_B`,
+    COUNT(*) AS `Common_similars`,
+    
+    -- Mejor país de cada uno
+    (SELECT country FROM lastfm_country_rankings 
+     WHERE artist_id = a1.artist_id ORDER BY ranking_position ASC LIMIT 1) AS `A_top_country`,
+    (SELECT country FROM lastfm_country_rankings 
+     WHERE artist_id = a2.artist_id ORDER BY ranking_position ASC LIMIT 1) AS `B_top_country`,
+    
+    -- ¿A es débil (>25) en el mejor país de B?
+    EXISTS (SELECT 1 FROM lastfm_country_rankings 
+            WHERE artist_id = a1.artist_id 
+              AND country = (SELECT country FROM lastfm_country_rankings 
+                             WHERE artist_id = a2.artist_id ORDER BY ranking_position ASC LIMIT 1)
+              AND ranking_position > 25) AS `A_weak_in_B_country`,
+    
+    -- ¿B es débil (>25) en el mejor país de A?
+    EXISTS (SELECT 1 FROM lastfm_country_rankings 
+            WHERE artist_id = a2.artist_id 
+              AND country = (SELECT country FROM lastfm_country_rankings 
+                             WHERE artist_id = a1.artist_id ORDER BY ranking_position ASC LIMIT 1)
+              AND ranking_position > 25) AS `B_weak_in_A_country`,
+    
+    -- Suma de loyalty como indicador de compromiso de fans
+    (SELECT popularity_ratio FROM lastfm_metrics WHERE artist_id = a1.artist_id) 
+    + (SELECT popularity_ratio FROM lastfm_metrics WHERE artist_id = a2.artist_id) AS `Combined_loyalty`
+
+FROM lastfm_similar_artists s1
+JOIN lastfm_similar_artists s2 
+    ON s1.similar_artist_name = s2.similar_artist_name
+    AND s1.artist_id < s2.artist_id
+JOIN artists a1 ON s1.artist_id = a1.artist_id
+JOIN artists a2 ON s2.artist_id = a2.artist_id
+
+WHERE a1.artist_id IN (SELECT DISTINCT artist_id FROM lastfm_country_rankings WHERE artist_id IS NOT NULL)
+  AND a2.artist_id IN (SELECT DISTINCT artist_id FROM lastfm_country_rankings WHERE artist_id IS NOT NULL)
+
+GROUP BY a1.artist_id, a2.artist_id
+HAVING COUNT(*) >= 2   -- mínimo 2 similares en común
+ORDER BY 
+    (EXISTS (SELECT 1 FROM lastfm_country_rankings 
+             WHERE artist_id = a1.artist_id AND country = (SELECT country FROM lastfm_country_rankings 
+                                                           WHERE artist_id = a2.artist_id ORDER BY ranking_position ASC LIMIT 1)
+             AND ranking_position > 25)
+     OR
+     EXISTS (SELECT 1 FROM lastfm_country_rankings 
+             WHERE artist_id = a2.artist_id AND country = (SELECT country FROM lastfm_country_rankings 
+                                                           WHERE artist_id = a1.artist_id ORDER BY ranking_position ASC LIMIT 1)
+             AND ranking_position > 25)) DESC,
+    COUNT(*) DESC,
+    `Combined_loyalty` DESC
+LIMIT 20;
+
+
